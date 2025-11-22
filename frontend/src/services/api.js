@@ -4,20 +4,14 @@ const api = axios.create({
   baseURL: 'http://localhost:3333'
 });
 
-// Função para garantir que o usuário existe (pois o banco é em memória)
-api.interceptors.request.use(async (config) => {
-  let userId = localStorage.getItem('@dailydiet:userid');
-
-  if (!userId) {
-    const response = await axios.post('http://localhost:3333/users', {
-      name: "User Teste",
-      email: "teste@email.com"
-    });
-    userId = response.data.id;
-    localStorage.setItem('@dailydiet:userid', userId);
+// Interceptor simples: Apenas pega o ID do localStorage e envia no cabeçalho
+api.interceptors.request.use((config) => {
+  const userId = localStorage.getItem('@dailydiet:userid');
+  
+  if (userId) {
+    config.headers['user-id'] = userId;
   }
-
-  config.headers['user-id'] = userId;
+  
   return config;
 });
 

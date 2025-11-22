@@ -13,14 +13,13 @@ const Header = styled.div`
   padding: 2rem;
   display: flex;
   align-items: center;
-  justify-content: center; /* Centraliza o texto */
+  justify-content: center;
   position: relative;
   
   font-weight: bold;
   font-size: 1.5rem;
   color: ${({ theme }) => theme.COLORS.GRAY_700};
 
-  /* A seta fica absoluta na esquerda para não empurrar o texto */
   a {
     position: absolute;
     left: 2rem;
@@ -29,15 +28,12 @@ const Header = styled.div`
 
 const Form = styled.form`
   background: white;
-  border-radius: 20px 20px 20px 20px;
+  border-radius: 20px 20px 0 0;
   padding: 2rem;
-  height: 70%;
+  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  max-width: 700px;
-  width: 100%;
-  margin: 0 auto; 
 
   input, textarea, select {
     padding: 14px;
@@ -62,21 +58,17 @@ const Button = styled.button`
 `;
 
 export function NewMeal() {
-  // Estados para guardar os valores do formulário
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isOnDiet, setIsOnDiet] = useState("yes");
-  const [date, setDate] = useState(null); // Para guardar a data original na edição
+  
+  // [NOVO] Estado para data e hora
+  const [dateTime, setDateTime] = useState(''); 
   
   const navigate = useNavigate();
-  
-  // HOOK MÁGICO: Pega o ID da URL (ex: /edit/123)
   const { id } = useParams(); 
-  
-  // Se tiver ID, é edição (true). Se não tiver, é criação (false).
   const isEditing = !!id; 
 
-  // EFEITO: Carrega os dados se for edição
   useEffect(() => {
     if (isEditing) {
       api.get(`/meals/${id}`)
@@ -85,67 +77,72 @@ export function NewMeal() {
           setName(name);
           setDescription(description);
           setIsOnDiet(isOnDiet ? "yes" : "no");
-          setDate(date);
+          
+          // Formata a data para o input do HTML (YYYY-MM-DDTHH:mm)
+          // O slice(0,16) corta os segundos e milisegundos
+          if (date) {
+             const formattedDate = new Date(date).toISOString().slice(0, 16);
+             setDateTime(formattedDate);
+          }
         })
-        .catch(error => {
-          console.error("Erro ao carregar refeição:", error);
-          alert("Erro ao carregar dados. Talvez o servidor tenha reiniciado?");
-          navigate('/');
-        });
+        .catch(() => navigate('/home'));
     }
   }, [id, isEditing, navigate]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     try {
+      // Se o usuário não preencher data, usa a atual
+      const finalDate = dateTime ? new Date(dateTime).toISOString() : new Date().toISOString();
+
       const dataToSend = {
         name,
         description,
-        date: date || new Date().toISOString(), // Mantém data original ou cria nova
+        date: finalDate, 
         isOnDiet: isOnDiet === "yes"
       };
 
       if (isEditing) {
-        // PUT: Atualiza
-        await api.put(`/meals/${id}`, dataToSend);
-        alert('Refeição atualizada com sucesso!');
+          await api.put(`/meals/${id}`, dataToSend);
+          alert('Refeição atualizada!');
       } else {
-        // POST: Cria nova
-        await api.post('/meals', dataToSend);
-        alert('Refeição cadastrada com sucesso!');
+          await api.post('/meals', dataToSend);
+          alert('Refeição criada!');
       }
       
-      navigate('/');
+      navigate('/home');
     } catch (error) {
-      alert("Erro ao salvar. Verifique o console.");
+      alert("Erro ao salvar.");
     }
   }
 
   return (
     <Container>
       <Header>
-        <Link to="/"><ArrowLeft size={24} color="#333"/></Link>
-        {/* Muda o título dinamicamente */}
+        {/* Link volta para /home agora */}
+        <Link to="/home"><ArrowLeft size={24} color="#333"/></Link>
         <span>{isEditing ? 'Editar refeição' : 'Nova refeição'}</span>
       </Header>
       
       <Form onSubmit={handleSubmit}>
         <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
           <label>Nome</label>
-          <input 
-            required 
-            value={name} 
-            onChange={e => setName(e.target.value)} 
-          />
+          <input required value={name} onChange={e => setName(e.target.value)} />
         </div>
 
         <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
           <label>Descrição</label>
-          <textarea 
-            required 
-            rows={3} 
-            value={description} 
-            onChange={e => setDescription(e.target.value)} 
+          <textarea required rows={3} value={description} onChange={e => setDescription(e.target.value)} />
+        </div>
+
+        {/* [NOVO] Campo de Data e Hora */}
+        <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
+          <label>Data e Hora</label>
+          <input 
+            type="datetime-local"
+            required
+            value={dateTime} 
+            onChange={e => setDateTime(e.target.value)} 
           />
         </div>
 
@@ -157,9 +154,7 @@ export function NewMeal() {
            </select>
         </div>
 
-        <Button type="submit">
-          {isEditing ? 'Salvar alterações' : 'Cadastrar Refeição'}
-        </Button>
+        <Button type="submit">{isEditing ? 'Salvar alterações' : 'Cadastrar Refeição'}</Button>
       </Form>
     </Container>
   );

@@ -3,10 +3,13 @@ import styled from 'styled-components';
 import api from '../../services/api';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'phosphor-react';
+import { Footer } from '../../components/Footer';
 
 const Container = styled.div`
   background: ${({ theme }) => theme.COLORS.GRAY_300};
-  height: 100vh;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 `;
 
 const Header = styled.div`
@@ -28,18 +31,27 @@ const Header = styled.div`
 
 const Form = styled.form`
   background: white;
-  border-radius: 20px 20px 0 0;
   padding: 2rem;
-  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  
+  flex: 1;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  border-radius: 20px;
 
   input, textarea, select {
     padding: 14px;
     border-radius: 6px;
     border: 1px solid #ddd;
     font-size: 1rem;
+    
+    /* Opcional: Estilizando a cor do placeholder se quiser mudar o cinza padrão */
+    &::placeholder {
+      color: ${({ theme }) => theme.COLORS.GRAY_400};
+    }
   }
   
   label { font-weight: bold; font-size: 0.9rem; color: #444; }
@@ -61,13 +73,11 @@ export function NewMeal() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isOnDiet, setIsOnDiet] = useState("yes");
-  
-  // [NOVO] Estado para data e hora
   const [dateTime, setDateTime] = useState(''); 
   
   const navigate = useNavigate();
   const { id } = useParams(); 
-  const isEditing = !!id; 
+  const isEditing = !!id;
 
   useEffect(() => {
     if (isEditing) {
@@ -78,8 +88,6 @@ export function NewMeal() {
           setDescription(description);
           setIsOnDiet(isOnDiet ? "yes" : "no");
           
-          // Formata a data para o input do HTML (YYYY-MM-DDTHH:mm)
-          // O slice(0,16) corta os segundos e milisegundos
           if (date) {
              const formattedDate = new Date(date).toISOString().slice(0, 16);
              setDateTime(formattedDate);
@@ -92,7 +100,6 @@ export function NewMeal() {
   async function handleSubmit(e) {
     e.preventDefault();
     try {
-      // Se o usuário não preencher data, usa a atual
       const finalDate = dateTime ? new Date(dateTime).toISOString() : new Date().toISOString();
 
       const dataToSend = {
@@ -119,7 +126,6 @@ export function NewMeal() {
   return (
     <Container>
       <Header>
-        {/* Link volta para /home agora */}
         <Link to="/home"><ArrowLeft size={24} color="#333"/></Link>
         <span>{isEditing ? 'Editar refeição' : 'Nova refeição'}</span>
       </Header>
@@ -127,15 +133,26 @@ export function NewMeal() {
       <Form onSubmit={handleSubmit}>
         <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
           <label>Nome</label>
-          <input required value={name} onChange={e => setName(e.target.value)} />
+          <input 
+            required 
+            placeholder="Ex.: Café da manhã, Almoço, Janta..."
+            value={name} 
+            onChange={e => setName(e.target.value)} 
+          />
         </div>
 
         <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
           <label>Descrição</label>
-          <textarea required rows={3} value={description} onChange={e => setDescription(e.target.value)} />
+         
+          <textarea 
+            required 
+            rows={3} 
+            placeholder="Ex.: Sanduíche de pão integral com atum e salada..."
+            value={description} 
+            onChange={e => setDescription(e.target.value)} 
+          />
         </div>
 
-        {/* [NOVO] Campo de Data e Hora */}
         <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
           <label>Data e Hora</label>
           <input 
@@ -145,7 +162,7 @@ export function NewMeal() {
             onChange={e => setDateTime(e.target.value)} 
           />
         </div>
-
+        
         <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
            <label>Está dentro da dieta?</label>
            <select value={isOnDiet} onChange={e => setIsOnDiet(e.target.value)}>
@@ -156,6 +173,8 @@ export function NewMeal() {
 
         <Button type="submit">{isEditing ? 'Salvar alterações' : 'Cadastrar Refeição'}</Button>
       </Form>
+
+      <Footer />
     </Container>
   );
 }

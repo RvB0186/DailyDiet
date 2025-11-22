@@ -8,7 +8,7 @@ const FooterContainer = styled.footer`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
+  gap: 0.5rem;
   margin-top: auto; /* Garante que fique no fundo se o pai for flex */
   width: 100%;
 `;

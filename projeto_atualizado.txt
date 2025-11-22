@@ -198,6 +198,114 @@ ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\backend\package.
 ================
 ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\src\components\Footer\index.jsx
 ================
+import styled from 'styled-components';
+import { FacebookLogo, TwitterLogo, LinkedinLogo, Phone, Envelope } from 'phosphor-react';
+
+const FooterContainer = styled.footer`
+  background-color: ${({ theme }) => theme.COLORS.GRAY_500};
+  color: ${({ theme }) => theme.COLORS.WHITE};
+  padding: 0.5rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: auto; /* Garante que fique no fundo se o pai for flex */
+  width: 100%;
+`;
+
+const SocialIcons = styled.div`
+  display: flex;
+  gap: 1rem;
+
+  a {
+    background-color: ${({ theme }) => theme.COLORS.WHITE};
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: filter 0.2s;
+    text-decoration: none;
+
+    &:hover {
+      filter: brightness(0.9);
+    }
+  }
+`;
+
+const InfoText = styled.div`
+  text-align: center;
+  font-size: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  p {
+    margin: 0;
+    color: ${({ theme }) => theme.COLORS.GRAY_300};
+  }
+`;
+
+const ContactRow = styled.div`
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0.5rem;
+
+  div {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+`;
+
+const LogoText = styled.h3`
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-top: 1rem;
+  color: ${({ theme }) => theme.COLORS.WHITE};
+`;
+
+export function Footer() {
+  return (
+    <FooterContainer>
+        <LogoText>
+             Daily Diet
+        </LogoText>
+      <SocialIcons>
+        <a href="#" target="_blank" rel="noreferrer">
+          <FacebookLogo size={28} color="#333638" weight="fill" />
+        </a>
+        <a href="#" target="_blank" rel="noreferrer">
+          <TwitterLogo size={28} color="#333638" weight="fill" />
+        </a>
+        <a href="#" target="_blank" rel="noreferrer">
+          <LinkedinLogo size={28} color="#333638" weight="fill" />
+        </a>
+      </SocialIcons>
+
+      <InfoText>
+        <p>250 Executive Park Blvd, Suite 3400 â€¢ San Francisco CA 94134 â€¢ United States</p>
+        
+        <ContactRow>
+          <div>
+            <Phone size={20} />
+            <span>+ 123-456-789</span>
+          </div>
+          <div>
+            <Envelope size={20} />
+            <span>contact@dailydiet.com</span>
+          </div>
+        </ContactRow>
+      </InfoText>
+
+
+    </FooterContainer>
+  );
+}
 ================
 ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\src\pages\Home\index.jsx
 ================
@@ -205,12 +313,22 @@ import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import api from '../../services/api';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, ChartBar } from 'phosphor-react';
+import { Plus, ChartBar, SignOut } from 'phosphor-react'; // Adicionado SignOut
+import { Footer } from '../../components/Footer'; // Importando o Footer
 
 const Container = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Garante altura mÃ­nima para o footer ir pro final */
+  background-color: ${({ theme }) => theme.COLORS.BACKGROUND};
+`;
+
+const Content = styled.div`
   padding: 2rem;
   max-width: 700px;
   margin: 0 auto;
+  width: 100%;
+  flex: 1; /* Faz o conteÃºdo ocupar o espaÃ§o disponÃ­vel empurrando o footer */
 `;
 
 const Header = styled.header`
@@ -219,15 +337,39 @@ const Header = styled.header`
   align-items: center;
   margin-bottom: 2rem;
   
-  div {
+  .user-info {
     display: flex;
     flex-direction: column;
+  }
+
+  .profile-area {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
   }
   
   h2 { font-size: 1.5rem; color: ${({ theme }) => theme.COLORS.GRAY_700}; }
   span { color: ${({ theme }) => theme.COLORS.GRAY_600}; font-size: 1rem; }
   
-  img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid ${({ theme }) => theme.COLORS.GRAY_700}; }
+  img { 
+    width: 50px;
+    height: 50px; 
+    border-radius: 50%; 
+    border: 2px solid ${({ theme }) => theme.COLORS.GRAY_700}; 
+  }
+`;
+
+const LogoutButton = styled.button`
+  background: transparent;
+  border: none;
+  color: ${({ theme }) => theme.COLORS.GRAY_700};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    color: ${({ theme }) => theme.COLORS.RED_DARK};
+  }
 `;
 
 const Button = styled.button`
@@ -259,7 +401,6 @@ const PercentCard = styled(Link)`
   span { color: ${({ theme }) => theme.COLORS.GRAY_600}; font-size: 14px; }
 `;
 
-// O MealCard agora Ã© clicÃ¡vel, entÃ£o adicionamos cursor pointer
 const MealCard = styled.div`
   padding: 16px;
   border: 1px solid ${({ theme }) => theme.COLORS.GRAY_300};
@@ -277,7 +418,7 @@ const MealCard = styled.div`
   
   .status {
     width: 14px; 
-    height: 14px; 
+    height: 14px;
     border-radius: 50%;
     background: ${({ isOnDiet, theme }) => isOnDiet ? theme.COLORS.GREEN_DARK : theme.COLORS.RED_DARK};
   }
@@ -286,12 +427,11 @@ const MealCard = styled.div`
 export function Home() {
   const [meals, setMeals] = useState([]);
   const [metrics, setMetrics] = useState({});
-  const [user, setUser] = useState({ name: 'Carregando...' }); // Estado para o usuÃ¡rio
+  const [user, setUser] = useState({ name: 'Carregando...' });
   const navigate = useNavigate();
 
   async function loadData() {
     try {
-      // Agora buscamos tambÃ©m o /me
       const [mealsRes, metricsRes, userRes] = await Promise.all([
         api.get('/meals'),
         api.get('/metrics'),
@@ -302,10 +442,22 @@ export function Home() {
       setUser(userRes.data);
     } catch (error) {
       console.error("Erro ao carregar dados", error);
+      // Se der erro de autenticaÃ§Ã£o, joga pro login
+      if(error.response?.status === 401) {
+        handleLogout();
+      }
     }
   }
 
   useEffect(() => { loadData(); }, []);
+
+  // FunÃ§Ã£o de Logout
+  function handleLogout() {
+    // Remove o ID do usuÃ¡rio do armazenamento
+    localStorage.removeItem('@dailydiet:userid');
+    // Redireciona para a rota raiz (Login)
+    navigate('/');
+  }
 
   const percentInDiet = metrics.totalMeals > 0 
     ? ((metrics.totalInDiet / metrics.totalMeals) * 100).toFixed(2) 
@@ -313,40 +465,49 @@ export function Home() {
 
   return (
     <Container>
-      <Header>
-        <div>
-           <span>OlÃ¡,</span>
-           <h2>{user.name}</h2>
-        </div>
-        <img src="https://github.com/rocketseat.png" alt="Profile"/>
-      </Header>
+      <Content>
+        <Header>
+          <div className="user-info">
+             <span>OlÃ¡,</span>
+             <h2>{user.name}</h2>
+          </div>
+          
+          <div className="profile-area">
+            <img src="https://github.com/rocketseat.png" alt="Profile"/>
+            <LogoutButton onClick={handleLogout} title="Sair">
+              <SignOut size={24} />
+            </LogoutButton>
+          </div>
+        </Header>
 
-      <PercentCard to="/metrics">
-        <h1>{percentInDiet}%</h1>
-        <span>das refeiÃ§Ãµes dentro da dieta</span>
-        <ChartBar size={24} style={{marginTop: 10, color: '#639339'}}/>
-      </PercentCard>
+        <PercentCard to="/metrics">
+          <h1>{percentInDiet}%</h1>
+          <span>das refeiÃ§Ãµes dentro da dieta</span>
+          <ChartBar size={24} style={{marginTop: 10, color: '#639339'}}/>
+        </PercentCard>
 
-      <p style={{marginBottom: 10}}>RefeiÃ§Ãµes</p>
-      <Link to="/new" style={{textDecoration: 'none'}}>
-        <Button style={{width: '100%', marginBottom: 20}}>
-          <Plus size={18} /> Nova refeiÃ§Ã£o
-        </Button>
-      </Link>
+        <p style={{marginBottom: 10}}>RefeiÃ§Ãµes</p>
+        <Link to="/new" style={{textDecoration: 'none'}}>
+          <Button style={{width: '100%', marginBottom: 20}}>
+            <Plus size={18} /> Nova refeiÃ§Ã£o
+          </Button>
+        </Link>
 
-      {meals.map(meal => (
-        // Ao clicar no card, vai para a pÃ¡gina de detalhes
-        <MealCard 
-          key={meal.id} 
-          isOnDiet={meal.isOnDiet}
-          onClick={() => navigate(`/meal/${meal.id}`)}
-        >
-          <span>{new Date(meal.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-          <div style={{height: 20, width: 1, background: '#ddd'}}></div>
-          <strong>{meal.name}</strong>
-          <div className="status"></div>
-        </MealCard>
-      ))}
+        {meals.map(meal => (
+          <MealCard 
+            key={meal.id} 
+            isOnDiet={meal.isOnDiet}
+            onClick={() => navigate(`/meal/${meal.id}`)}
+          >
+            <span>{new Date(meal.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            <div style={{height: 20, width: 1, background: '#ddd'}}></div>
+            <strong>{meal.name}</strong>
+            <div className="status"></div>
+          </MealCard>
+        ))}
+      </Content>
+      
+      <Footer />
     </Container>
   );
 }
@@ -358,10 +519,11 @@ import styled from 'styled-components';
 import api from '../../services/api';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, PencilSimple, Trash } from 'phosphor-react';
+import { Footer } from '../../components/Footer'; 
 
 const Container = styled.div`
   background: ${({ theme, isOnDiet }) => isOnDiet ? theme.COLORS.GREEN_LIGHT : theme.COLORS.RED_LIGHT};
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 `;
@@ -382,15 +544,18 @@ const Header = styled.div`
 
 const Content = styled.div`
   background: white;
-  border-radius: 20px 20px 0 0;
-  padding: 2rem;
+  border-radius: 20px 20px 20px 20px;
+  padding: 1rem;
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   max-width: 700px;
   width: 100%;
-  margin: 0 auto;
+  
+  /* ALTERADO AQUI: */
+  /* 0 no topo | auto nas laterais | 2rem embaixo */
+  margin: 0 auto 2rem; 
 `;
 
 const Title = styled.h1`
@@ -424,11 +589,13 @@ const Tag = styled.div`
   }
 `;
 
-const Footer = styled.div`
+
+const ButtonsContainer = styled.div`
   margin-top: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-bottom: 2rem;
 `;
 
 const Button = styled.button`
@@ -472,7 +639,7 @@ export function MealDetails() {
   return (
     <Container isOnDiet={meal.isOnDiet}>
       <Header>
-        <Link to="/"><ArrowLeft size={24} color="#333"/></Link>
+        <Link to="/home"><ArrowLeft size={24} color="#333"/></Link>
         <span>RefeiÃ§Ã£o</span>
       </Header>
 
@@ -492,15 +659,18 @@ export function MealDetails() {
           {meal.isOnDiet ? "Dentro da dieta" : "Fora da dieta"}
         </Tag>
 
-        <Footer>
+        <ButtonsContainer>
           <Button onClick={() => navigate(`/edit/${meal.id}`)}>
              <PencilSimple size={18} /> Editar refeiÃ§Ã£o
           </Button>
           <Button variant="secondary" onClick={handleDelete}>
              <Trash size={18} /> Excluir refeiÃ§Ã£o
           </Button>
-        </Footer>
+        </ButtonsContainer>
       </Content>
+      
+      <Footer />
+      
     </Container>
   );
 }
@@ -512,6 +682,7 @@ import styled from 'styled-components';
 import api from '../../services/api';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'phosphor-react';
+import { Footer } from '../../components/Footer';
 
 const Container = styled.div`
   background: ${({ theme }) => theme.COLORS.GREEN_LIGHT};
@@ -600,6 +771,7 @@ export function Metrics() {
           </Card>
         </div>
       </Content>
+      <Footer />
     </Container>
   );
 }
@@ -611,10 +783,13 @@ import styled from 'styled-components';
 import api from '../../services/api';
 import { useNavigate, Link, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'phosphor-react';
+import { Footer } from '../../components/Footer';
 
 const Container = styled.div`
   background: ${({ theme }) => theme.COLORS.GRAY_300};
-  height: 100vh;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 `;
 
 const Header = styled.div`
@@ -636,18 +811,27 @@ const Header = styled.div`
 
 const Form = styled.form`
   background: white;
-  border-radius: 20px 20px 0 0;
   padding: 2rem;
-  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  
+  flex: 1;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto 2rem;
+  border-radius: 20px;
 
   input, textarea, select {
     padding: 14px;
     border-radius: 6px;
     border: 1px solid #ddd;
     font-size: 1rem;
+    
+    /* Opcional: Estilizando a cor do placeholder se quiser mudar o cinza padrÃ£o */
+    &::placeholder {
+      color: ${({ theme }) => theme.COLORS.GRAY_400};
+    }
   }
   
   label { font-weight: bold; font-size: 0.9rem; color: #444; }
@@ -669,13 +853,11 @@ export function NewMeal() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isOnDiet, setIsOnDiet] = useState("yes");
-  
-  // [NOVO] Estado para data e hora
   const [dateTime, setDateTime] = useState(''); 
   
   const navigate = useNavigate();
   const { id } = useParams(); 
-  const isEditing = !!id; 
+  const isEditing = !!id;
 
   useEffect(() => {
     if (isEditing) {
@@ -686,8 +868,6 @@ export function NewMeal() {
           setDescription(description);
           setIsOnDiet(isOnDiet ? "yes" : "no");
           
-          // Formata a data para o input do HTML (YYYY-MM-DDTHH:mm)
-          // O slice(0,16) corta os segundos e milisegundos
           if (date) {
              const formattedDate = new Date(date).toISOString().slice(0, 16);
              setDateTime(formattedDate);
@@ -700,7 +880,6 @@ export function NewMeal() {
   async function handleSubmit(e) {
     e.preventDefault();
     try {
-      // Se o usuÃ¡rio nÃ£o preencher data, usa a atual
       const finalDate = dateTime ? new Date(dateTime).toISOString() : new Date().toISOString();
 
       const dataToSend = {
@@ -727,7 +906,6 @@ export function NewMeal() {
   return (
     <Container>
       <Header>
-        {/* Link volta para /home agora */}
         <Link to="/home"><ArrowLeft size={24} color="#333"/></Link>
         <span>{isEditing ? 'Editar refeiÃ§Ã£o' : 'Nova refeiÃ§Ã£o'}</span>
       </Header>
@@ -735,15 +913,26 @@ export function NewMeal() {
       <Form onSubmit={handleSubmit}>
         <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
           <label>Nome</label>
-          <input required value={name} onChange={e => setName(e.target.value)} />
+          <input 
+            required 
+            placeholder="Ex.: CafÃ© da manhÃ£, AlmoÃ§o, Janta..."
+            value={name} 
+            onChange={e => setName(e.target.value)} 
+          />
         </div>
 
         <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
           <label>DescriÃ§Ã£o</label>
-          <textarea required rows={3} value={description} onChange={e => setDescription(e.target.value)} />
+         
+          <textarea 
+            required 
+            rows={3} 
+            placeholder="Ex.: SanduÃ­che de pÃ£o integral com atum e salada..."
+            value={description} 
+            onChange={e => setDescription(e.target.value)} 
+          />
         </div>
 
-        {/* [NOVO] Campo de Data e Hora */}
         <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
           <label>Data e Hora</label>
           <input 
@@ -753,7 +942,7 @@ export function NewMeal() {
             onChange={e => setDateTime(e.target.value)} 
           />
         </div>
-
+        
         <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
            <label>EstÃ¡ dentro da dieta?</label>
            <select value={isOnDiet} onChange={e => setIsOnDiet(e.target.value)}>
@@ -764,6 +953,8 @@ export function NewMeal() {
 
         <Button type="submit">{isEditing ? 'Salvar alteraÃ§Ãµes' : 'Cadastrar RefeiÃ§Ã£o'}</Button>
       </Form>
+
+      <Footer />
     </Container>
   );
 }
@@ -775,13 +966,23 @@ import styled from 'styled-components';
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { ForkKnife } from 'phosphor-react';
+import { Footer } from '../../components/Footer';
 
+// 1. AlteraÃ§Ã£o no Container: flex-direction column e removemos os alinhamentos centrais daqui
 const Container = styled.div`
   height: 100vh;
   background: ${({ theme }) => theme.COLORS.GRAY_300};
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column; /* Empilha os elementos verticalmente */
+`;
+
+// 2. Novo componente para ocupar o espaÃ§o e centralizar o Card
+const Content = styled.div`
+  flex: 1; /* Ocupa todo o espaÃ§o sobrando, empurrando o footer para baixo */
+  display: flex;
+  align-items: center; /* Centraliza o card verticalmente */
+  justify-content: center; /* Centraliza o card horizontalmente */
+  width: 100%;
 `;
 
 const Card = styled.div`
@@ -830,8 +1031,8 @@ const Button = styled.button`
 
 export function SignIn() {
   const [email, setEmail] = useState('');
-  const [name, setName] = useState(''); // Usado apenas no cadastro
-  const [isRegistering, setIsRegistering] = useState(false); // Alterna entre Login e Cadastro
+  const [name, setName] = useState(''); 
+  const [isRegistering, setIsRegistering] = useState(false);
   
   const navigate = useNavigate();
 
@@ -842,18 +1043,15 @@ export function SignIn() {
       let response;
       
       if (isRegistering) {
-        // CADASTRO
         if (!name) return alert("Digite seu nome");
         response = await api.post('/users', { name, email });
         alert("Conta criada com sucesso! FaÃ§a login.");
-        setIsRegistering(false); // Volta para tela de login
+        setIsRegistering(false);
         return; 
       } else {
-        // LOGIN
         response = await api.post('/sessions', { email });
       }
 
-      // Salva o ID e entra na Home
       const user = response.data;
       localStorage.setItem('@dailydiet:userid', user.id);
       navigate('/home');
@@ -871,35 +1069,40 @@ export function SignIn() {
 
   return (
     <Container>
-      <Card>
-        <Logo>
-          <ForkKnife size={40} />
-          Daily Diet
-        </Logo>
+      {/* 3. Envolvemos o Card no Content */}
+      <Content>
+        <Card>
+          <Logo>
+            <ForkKnife size={40} />
+            Daily Diet
+          </Logo>
 
-        {isRegistering && (
+          {isRegistering && (
+            <Input 
+              placeholder="Seu nome" 
+              value={name} 
+              onChange={e => setName(e.target.value)} 
+            />
+          )}
+          
           <Input 
-            placeholder="Seu nome" 
-            value={name} 
-            onChange={e => setName(e.target.value)} 
+            placeholder="Seu e-mail" 
+            type="email"
+            value={email} 
+            onChange={e => setEmail(e.target.value)} 
           />
-        )}
-        
-        <Input 
-          placeholder="Seu e-mail" 
-          type="email"
-          value={email} 
-          onChange={e => setEmail(e.target.value)} 
-        />
 
-        <Button onClick={handleAuth}>
-          {isRegistering ? 'Cadastrar' : 'Entrar'}
-        </Button>
-        
-        <Button variant="secondary" onClick={() => setIsRegistering(!isRegistering)}>
-          {isRegistering ? 'JÃ¡ tenho conta' : 'Criar conta'}
-        </Button>
-      </Card>
+          <Button onClick={handleAuth}>
+            {isRegistering ? 'Cadastrar' : 'Entrar'}
+          </Button>
+          
+          <Button variant="secondary" onClick={() => setIsRegistering(!isRegistering)}>
+            {isRegistering ? 'JÃ¡ tenho conta' : 'Criar conta'}
+          </Button>
+        </Card>
+      </Content>
+      
+      <Footer />
     </Container>
   );
 }

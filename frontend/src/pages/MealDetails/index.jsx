@@ -3,13 +3,11 @@ import styled from 'styled-components';
 import api from '../../services/api';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, PencilSimple, Trash } from 'phosphor-react';
-
-[cite_start]
 import { Footer } from '../../components/Footer'; 
 
 const Container = styled.div`
   background: ${({ theme, isOnDiet }) => isOnDiet ? theme.COLORS.GREEN_LIGHT : theme.COLORS.RED_LIGHT};
-  min-height: 100vh; /* Mudado de height para min-height para permitir rolagem se necessário */
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
 `;
@@ -30,15 +28,18 @@ const Header = styled.div`
 
 const Content = styled.div`
   background: white;
-  border-radius: 20px 20px 0 0; /* Ajuste visual: arredondar apenas em cima parece melhor com footer colado, mas pode manter 20px geral se preferir */
-  padding: 2rem;
-  flex: 1; /* Faz o conteúdo crescer e empurrar o Footer global para baixo */
+  border-radius: 20px 20px 20px 20px;
+  padding: 1rem;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   max-width: 700px;
   width: 100%;
-  margin: 0 auto;
+  
+  /* ALTERADO AQUI: */
+  /* 0 no topo | auto nas laterais | 2rem embaixo */
+  margin: 0 auto 2rem; 
 `;
 
 const Title = styled.h1`
@@ -72,13 +73,13 @@ const Tag = styled.div`
   }
 `;
 
-[cite_start]// 2. Renomeamos o antigo 'Footer' local para 'ButtonsContainer' para não dar conflito [cite: 55]
+
 const ButtonsContainer = styled.div`
   margin-top: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-bottom: 2rem; /* Um respiro antes do footer global */
+  margin-bottom: 2rem;
 `;
 
 const Button = styled.button`
@@ -142,7 +143,6 @@ export function MealDetails() {
           {meal.isOnDiet ? "Dentro da dieta" : "Fora da dieta"}
         </Tag>
 
-        
         <ButtonsContainer>
           <Button onClick={() => navigate(`/edit/${meal.id}`)}>
              <PencilSimple size={18} /> Editar refeição
@@ -152,7 +152,6 @@ export function MealDetails() {
           </Button>
         </ButtonsContainer>
       </Content>
-      
       
       <Footer />
       

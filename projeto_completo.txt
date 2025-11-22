@@ -1,0 +1,683 @@
+﻿================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\backend\src\server.js
+================
+// src/server.js
+const express = require('express');
+const cors = require('cors');
+const { v4: uuidv4 } = require('uuid');
+
+const app = express();
+app.use(express.json());
+app.use(cors());
+
+// --- BANCO DE DADOS EM MEMÃ“RIA (Arrays) ---
+const users = [];
+const meals = [];
+
+// --- MIDDLEWARE (VerificaÃ§Ã£o de UsuÃ¡rio) ---
+// Regra: Identificar o usuÃ¡rio entre as requisiÃ§Ãµes
+function checkUserExists(req, res, next) {
+  const userId = req.headers['user-id']; // O Frontend enviarÃ¡ isso no cabeÃ§alho
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+  const user = users.find(u => u.id === userId);
+  if (!user) return res.status(401).json({ error: 'User not found' });
+
+  req.user = user;
+  next();
+}
+
+// --- ROTAS ---
+
+// 1. Criar UsuÃ¡rio
+app.post('/users', (req, res) => {
+  const { name, email } = req.body;
+  // Cria um ID Ãºnico para o usuÃ¡rio
+  const user = { id: uuidv4(), name, email };
+  users.push(user);
+  
+  // Retorna o usuÃ¡rio criado (o Frontend vai precisar desse ID)
+  return res.status(201).json(user);
+});
+
+// 2. Registrar uma refeiÃ§Ã£o
+app.post('/meals', checkUserExists, (req, res) => {
+  const { name, description, date, isOnDiet } = req.body;
+  
+  const meal = {
+    id: uuidv4(),
+    user_id: req.user.id, // Relaciona a refeiÃ§Ã£o ao usuÃ¡rio
+    name,
+    description,
+    date, 
+    isOnDiet // true ou false
+  };
+
+  meals.push(meal);
+  return res.status(201).json(meal);
+});
+
+// 3. Listar todas as refeiÃ§Ãµes de um usuÃ¡rio
+app.get('/meals', checkUserExists, (req, res) => {
+  const userMeals = meals.filter(m => m.user_id === req.user.id);
+  return res.json(userMeals);
+});
+
+// 4. Visualizar uma Ãºnica refeiÃ§Ã£o
+app.get('/meals/:id', checkUserExists, (req, res) => {
+  const { id } = req.params;
+  const meal = meals.find(m => m.id === id && m.user_id === req.user.id);
+  
+  if (!meal) return res.status(404).json({ error: 'Meal not found' });
+  return res.json(meal);
+});
+
+// 5. Editar uma refeiÃ§Ã£o
+app.put('/meals/:id', checkUserExists, (req, res) => {
+  const { id } = req.params;
+  const { name, description, date, isOnDiet } = req.body;
+  
+  const mealIndex = meals.findIndex(m => m.id === id && m.user_id === req.user.id);
+  
+  if (mealIndex < 0) return res.status(404).json({ error: 'Meal not found' });
+
+  // Atualiza os dados mantendo o ID e o user_id originais
+  meals[mealIndex] = { 
+    ...meals[mealIndex], 
+    name, 
+    description, 
+    date, 
+    isOnDiet 
+  };
+  
+  return res.json(meals[mealIndex]);
+});
+
+// 6. Apagar uma refeiÃ§Ã£o
+app.delete('/meals/:id', checkUserExists, (req, res) => {
+  const { id } = req.params;
+  const mealIndex = meals.findIndex(m => m.id === id && m.user_id === req.user.id);
+  
+  if (mealIndex < 0) return res.status(404).json({ error: 'Meal not found' });
+
+  meals.splice(mealIndex, 1);
+  return res.status(204).send();
+});
+
+// 7. Recuperar mÃ©tricas de um usuÃ¡rio
+app.get('/metrics', checkUserExists, (req, res) => {
+  const userMeals = meals
+    .filter(m => m.user_id === req.user.id)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const totalMeals = userMeals.length;
+  const totalInDiet = userMeals.filter(m => m.isOnDiet).length;
+  const totalOutDiet = userMeals.filter(m => !m.isOnDiet).length;
+
+  // LÃ³gica para calcular a melhor sequÃªncia (best sequence)
+  let bestSequence = 0;
+  let currentSequence = 0;
+
+  userMeals.forEach(meal => {
+    if (meal.isOnDiet) {
+      currentSequence++;
+      if (currentSequence > bestSequence) {
+        bestSequence = currentSequence;
+      }
+    } else {
+      currentSequence = 0;
+    }
+  });
+
+  return res.json({
+    totalMeals,
+    totalInDiet,
+    totalOutDiet,
+    bestSequence
+  });
+});
+
+// Inicia o servidor na porta 3333
+app.listen(3333, () => console.log('Server running on port 3333 ðŸš€'));
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\backend\package.json
+================
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "uuid": "^13.0.0"
+  },
+  "description": ""
+}
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\src\pages\Home\index.jsx
+================
+import { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import api from '../../services/api';
+import { Link } from 'react-router-dom';
+import { Plus, ChartBar } from 'phosphor-react';
+
+const Container = styled.div`
+  padding: 2rem;
+  max-width: 700px;
+  margin: 0 auto;
+`;
+
+const Header = styled.header`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  
+  img { width: 80px; } /* Logo fictÃ­cia */
+`;
+
+const Button = styled.button`
+  background: ${({ theme }) => theme.COLORS.GRAY_600};
+  color: white;
+  border: 0;
+  padding: 12px 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  
+  &:hover { filter: brightness(0.9); }
+`;
+
+const PercentCard = styled(Link)`
+  background: ${({ theme }) => theme.COLORS.GREEN_LIGHT};
+  padding: 20px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: inherit;
+  margin-bottom: 2rem;
+
+  h1 { font-size: 32px; color: ${({ theme }) => theme.COLORS.GRAY_700}; }
+  span { color: ${({ theme }) => theme.COLORS.GRAY_600}; font-size: 14px; }
+`;
+
+const MealCard = styled.div`
+  padding: 16px;
+  border: 1px solid ${({ theme }) => theme.COLORS.GRAY_300};
+  margin-bottom: 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  
+  strong { flex: 1; color: ${({ theme }) => theme.COLORS.GRAY_700}; }
+  
+  .status {
+    width: 14px; 
+    height: 14px; 
+    border-radius: 50%;
+    background: ${({ isOnDiet, theme }) => isOnDiet ? theme.COLORS.GREEN_DARK : theme.COLORS.RED_DARK};
+  }
+`;
+
+export function Home() {
+  const [meals, setMeals] = useState([]);
+  const [metrics, setMetrics] = useState({});
+
+  async function loadData() {
+    try {
+      const [mealsRes, metricsRes] = await Promise.all([
+        api.get('/meals'),
+        api.get('/metrics')
+      ]);
+      setMeals(mealsRes.data);
+      setMetrics(metricsRes.data);
+    } catch (error) {
+      console.error("Erro ao carregar dados", error);
+    }
+  }
+
+  useEffect(() => { loadData(); }, []);
+
+  const percentInDiet = metrics.totalMeals > 0 
+    ? ((metrics.totalInDiet / metrics.totalMeals) * 100).toFixed(2) 
+    : 0;
+
+  return (
+    <Container>
+      <Header>
+        <h2>Daily Diet</h2>
+        <img src="https://github.com/rocketseat.png" style={{borderRadius: '50%'}} alt="Profile"/>
+      </Header>
+
+      <PercentCard to="/metrics">
+        <h1>{percentInDiet}%</h1>
+        <span>das refeiÃ§Ãµes dentro da dieta</span>
+        <ChartBar size={24} style={{marginTop: 10, color: '#639339'}}/>
+      </PercentCard>
+
+      <p style={{marginBottom: 10}}>RefeiÃ§Ãµes</p>
+      <Link to="/new" style={{textDecoration: 'none'}}>
+        <Button style={{width: '100%', marginBottom: 20}}>
+          <Plus size={18} /> Nova refeiÃ§Ã£o
+        </Button>
+      </Link>
+
+      {meals.map(meal => (
+        <MealCard key={meal.id} isOnDiet={meal.isOnDiet}>
+          <span>{new Date(meal.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+          <div style={{height: 20, width: 1, background: '#ddd'}}></div>
+          <strong>{meal.name}</strong>
+          <div className="status"></div>
+        </MealCard>
+      ))}
+    </Container>
+  );
+}
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\src\pages\Metrics\index.jsx
+================
+import { useState, useEffect } from 'react';
+import styled from 'styled-components';
+import api from '../../services/api';
+import { Link } from 'react-router-dom';
+import { ArrowLeft } from 'phosphor-react';
+
+const Container = styled.div`
+  background: ${({ theme }) => theme.COLORS.GREEN_LIGHT}; /* Condicional na pratica */
+  min-height: 100vh;
+`;
+
+const Header = styled.header`
+  padding: 2rem;
+  text-align: center;
+  position: relative;
+  h1 { font-size: 2rem; color: ${({ theme }) => theme.COLORS.GRAY_700}; }
+  p { color: ${({ theme }) => theme.COLORS.GRAY_600}; }
+`;
+
+const Content = styled.div`
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 2rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+`;
+
+const Card = styled.div`
+  background: ${({ bg }) => bg || '#EFF0F0'};
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+  
+  h2 { font-size: 1.5rem; color: #1B1D1E; margin-bottom: 5px; }
+  p { font-size: 0.9rem; color: #333638; }
+`;
+
+export function Metrics() {
+  const [metrics, setMetrics] = useState(null);
+
+  useEffect(() => {
+    api.get('/metrics').then(res => setMetrics(res.data));
+  }, []);
+
+  if (!metrics) return <div style={{padding: 20}}>Carregando...</div>;
+
+  const percentage = metrics.totalMeals > 0 
+    ? ((metrics.totalInDiet / metrics.totalMeals) * 100).toFixed(2) 
+    : 0;
+
+  return (
+    <Container>
+      <Header>
+        <Link to="/" style={{position: 'absolute', left: 20, top: 25}}>
+          <ArrowLeft size={24} color="#639339"/>
+        </Link>
+        <h1>{percentage}%</h1>
+        <p>das refeiÃ§Ãµes dentro da dieta</p>
+      </Header>
+
+      <Content>
+        <h3 style={{textAlign: 'center', marginBottom: 10}}>EstatÃ­sticas gerais</h3>
+        
+        <Card>
+          <h2>{metrics.bestSequence}</h2>
+          <p>melhor sequÃªncia de pratos dentro da dieta</p>
+        </Card>
+        
+        <Card>
+          <h2>{metrics.totalMeals}</h2>
+          <p>refeiÃ§Ãµes registradas</p>
+        </Card>
+
+        <div style={{display: 'flex', gap: 10}}>
+          <Card bg="#E5F0DB" style={{flex: 1}}>
+             <h2>{metrics.totalInDiet}</h2>
+             <p>dentro da dieta</p>
+          </Card>
+          <Card bg="#F4E6E7" style={{flex: 1}}>
+             <h2>{metrics.totalOutDiet}</h2>
+             <p>fora da dieta</p>
+          </Card>
+        </div>
+      </Content>
+    </Container>
+  );
+}
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\src\pages\NewMeal\index.jsx
+================
+import { useState } from 'react';
+import styled from 'styled-components';
+import api from '../../services/api';
+import { useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft } from 'phosphor-react';
+
+const Container = styled.div`
+  background: ${({ theme }) => theme.COLORS.GRAY_300};
+  height: 100vh;
+`;
+
+const Header = styled.div`
+  padding: 2rem;
+  display: flex;
+  gap: 30%;
+  align-items: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+`;
+
+const Form = styled.form`
+  background: white;
+  border-radius: 20px 20px 0 0;
+  padding: 2rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+
+  input, textarea, select {
+    padding: 14px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    font-size: 1rem;
+  }
+  
+  label { font-weight: bold; font-size: 0.9rem; color: #444; }
+`;
+
+const Button = styled.button`
+  background: ${({ theme }) => theme.COLORS.GRAY_600};
+  color: white;
+  border: 0;
+  padding: 16px;
+  border-radius: 6px;
+  font-weight: bold;
+  margin-top: auto;
+  
+  &:hover { background: ${({ theme }) => theme.COLORS.GRAY_700}; }
+`;
+
+export function NewMeal() {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [isOnDiet, setIsOnDiet] = useState("yes"); // "yes" or "no"
+  const navigate = useNavigate();
+
+  async function handleCreateMeal(e) {
+    e.preventDefault();
+    try {
+      await api.post('/meals', {
+        name,
+        description,
+        date: new Date().toISOString(),
+        isOnDiet: isOnDiet === "yes"
+      });
+      alert('RefeiÃ§Ã£o cadastrada!');
+      navigate('/');
+    } catch (error) {
+      alert("Erro ao cadastrar.");
+    }
+  }
+
+  return (
+    <Container>
+      <Header>
+        <Link to="/"><ArrowLeft size={24} color="#333"/></Link>
+        <span>Nova refeiÃ§Ã£o</span>
+      </Header>
+      
+      <Form onSubmit={handleCreateMeal}>
+        <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
+          <label>Nome</label>
+          <input required onChange={e => setName(e.target.value)} />
+        </div>
+
+        <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
+          <label>DescriÃ§Ã£o</label>
+          <textarea required rows={3} onChange={e => setDescription(e.target.value)} />
+        </div>
+
+        <div style={{display: 'flex', flexDirection: 'column', gap: 5}}>
+           <label>EstÃ¡ dentro da dieta?</label>
+           <select value={isOnDiet} onChange={e => setIsOnDiet(e.target.value)}>
+             <option value="yes">Sim</option>
+             <option value="no">NÃ£o</option>
+           </select>
+        </div>
+
+        <Button type="submit">Cadastrar RefeiÃ§Ã£o</Button>
+      </Form>
+    </Container>
+  );
+}
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\src\routes\app.routes.jsx
+================
+import { Routes, Route } from 'react-router-dom';
+import { Home } from '../pages/Home';
+import { NewMeal } from '../pages/NewMeal';
+import { Metrics } from '../pages/Metrics';
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/new" element={<NewMeal />} />
+      <Route path="/metrics" element={<Metrics />} />
+    </Routes>
+  );
+}
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\src\routes\index.jsx
+================
+import { BrowserRouter } from 'react-router-dom';
+import { AppRoutes } from './app.routes';
+
+export function Routes() {
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  );
+}
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\src\services\api.js
+================
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:3333'
+});
+
+// FunÃ§Ã£o para garantir que o usuÃ¡rio existe (pois o banco Ã© em memÃ³ria)
+api.interceptors.request.use(async (config) => {
+  let userId = localStorage.getItem('@dailydiet:userid');
+
+  if (!userId) {
+    const response = await axios.post('http://localhost:3333/users', {
+      name: "User Teste",
+      email: "teste@email.com"
+    });
+    userId = response.data.id;
+    localStorage.setItem('@dailydiet:userid', userId);
+  }
+
+  config.headers['user-id'] = userId;
+  return config;
+});
+
+export default api;
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\src\styles\global.js
+================
+import { createGlobalStyle } from 'styled-components';
+
+export default createGlobalStyle`
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  body {
+    background-color: ${({ theme }) => theme.COLORS.BACKGROUND};
+    color: ${({ theme }) => theme.COLORS.GRAY_700};
+    -webkit-font-smoothing: antialiased;
+  }
+  body, input, textarea, button {
+    font-family: 'Arial', sans-serif;
+    font-weight: 400;
+    font-size: 1rem;
+  }
+  button {
+    cursor: pointer;
+  }
+`;
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\src\styles\theme.js
+================
+export default {
+  COLORS: {
+    BACKGROUND: "#FAFAFA",
+    WHITE: "#FFFFFF",
+    GRAY_700: "#1B1D1E",
+    GRAY_600: "#333638",
+    GRAY_500: "#5C6265",
+    GRAY_400: "#B9BBBC",
+    GRAY_300: "#DDDEDF",
+    RED_DARK: "#BF3B44",
+    RED_LIGHT: "#F4E6E7",
+    GREEN_DARK: "#639339",
+    GREEN_LIGHT: "#E5F0DB",
+  }
+};
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\src\App.jsx
+================
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\src\main.jsx
+================
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { ThemeProvider } from 'styled-components';
+import GlobalStyles from './styles/global';
+import theme from './styles/theme';
+import { Routes } from './routes';
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <ThemeProvider theme={theme}>
+      <GlobalStyles />
+      <Routes />
+    </ThemeProvider>
+  </React.StrictMode>,
+);
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\eslint.config.js
+================
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import { defineConfig, globalIgnores } from 'eslint/config'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{js,jsx}'],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        ecmaFeatures: { jsx: true },
+        sourceType: 'module',
+      },
+    },
+    rules: {
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    },
+  },
+])
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\package.json
+================
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "phosphor-react": "^1.4.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.6",
+    "styled-components": "^6.1.19"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "eslint": "^9.39.1",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "vite": "^7.2.4"
+  }
+}
+================
+ARQUIVO: C:\Users\RvB\OneDrive\Área de Trabalho\TADS\DailyDiet\frontend\vite.config.js
+================
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+})

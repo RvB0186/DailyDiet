@@ -4,9 +4,12 @@ import api from '../../services/api';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, PencilSimple, Trash } from 'phosphor-react';
 
+[cite_start]
+import { Footer } from '../../components/Footer'; 
+
 const Container = styled.div`
   background: ${({ theme, isOnDiet }) => isOnDiet ? theme.COLORS.GREEN_LIGHT : theme.COLORS.RED_LIGHT};
-  height: 100vh;
+  min-height: 100vh; /* Mudado de height para min-height para permitir rolagem se necessário */
   display: flex;
   flex-direction: column;
 `;
@@ -27,9 +30,9 @@ const Header = styled.div`
 
 const Content = styled.div`
   background: white;
-  border-radius: 20px 20px 0 0;
+  border-radius: 20px 20px 0 0; /* Ajuste visual: arredondar apenas em cima parece melhor com footer colado, mas pode manter 20px geral se preferir */
   padding: 2rem;
-  flex: 1;
+  flex: 1; /* Faz o conteúdo crescer e empurrar o Footer global para baixo */
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -69,11 +72,13 @@ const Tag = styled.div`
   }
 `;
 
-const Footer = styled.div`
+[cite_start]// 2. Renomeamos o antigo 'Footer' local para 'ButtonsContainer' para não dar conflito [cite: 55]
+const ButtonsContainer = styled.div`
   margin-top: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  margin-bottom: 2rem; /* Um respiro antes do footer global */
 `;
 
 const Button = styled.button`
@@ -117,7 +122,7 @@ export function MealDetails() {
   return (
     <Container isOnDiet={meal.isOnDiet}>
       <Header>
-        <Link to="/"><ArrowLeft size={24} color="#333"/></Link>
+        <Link to="/home"><ArrowLeft size={24} color="#333"/></Link>
         <span>Refeição</span>
       </Header>
 
@@ -137,15 +142,20 @@ export function MealDetails() {
           {meal.isOnDiet ? "Dentro da dieta" : "Fora da dieta"}
         </Tag>
 
-        <Footer>
+        
+        <ButtonsContainer>
           <Button onClick={() => navigate(`/edit/${meal.id}`)}>
              <PencilSimple size={18} /> Editar refeição
           </Button>
           <Button variant="secondary" onClick={handleDelete}>
              <Trash size={18} /> Excluir refeição
           </Button>
-        </Footer>
+        </ButtonsContainer>
       </Content>
+      
+      
+      <Footer />
+      
     </Container>
   );
 }

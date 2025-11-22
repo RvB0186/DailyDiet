@@ -3,13 +3,23 @@ import styled from 'styled-components';
 import api from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import { ForkKnife } from 'phosphor-react';
+import { Footer } from '../../components/Footer';
 
+// 1. Alteração no Container: flex-direction column e removemos os alinhamentos centrais daqui
 const Container = styled.div`
   height: 100vh;
   background: ${({ theme }) => theme.COLORS.GRAY_300};
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column; /* Empilha os elementos verticalmente */
+`;
+
+// 2. Novo componente para ocupar o espaço e centralizar o Card
+const Content = styled.div`
+  flex: 1; /* Ocupa todo o espaço sobrando, empurrando o footer para baixo */
+  display: flex;
+  align-items: center; /* Centraliza o card verticalmente */
+  justify-content: center; /* Centraliza o card horizontalmente */
+  width: 100%;
 `;
 
 const Card = styled.div`
@@ -58,8 +68,8 @@ const Button = styled.button`
 
 export function SignIn() {
   const [email, setEmail] = useState('');
-  const [name, setName] = useState(''); // Usado apenas no cadastro
-  const [isRegistering, setIsRegistering] = useState(false); // Alterna entre Login e Cadastro
+  const [name, setName] = useState(''); 
+  const [isRegistering, setIsRegistering] = useState(false);
   
   const navigate = useNavigate();
 
@@ -70,18 +80,15 @@ export function SignIn() {
       let response;
       
       if (isRegistering) {
-        // CADASTRO
         if (!name) return alert("Digite seu nome");
         response = await api.post('/users', { name, email });
         alert("Conta criada com sucesso! Faça login.");
-        setIsRegistering(false); // Volta para tela de login
+        setIsRegistering(false);
         return; 
       } else {
-        // LOGIN
         response = await api.post('/sessions', { email });
       }
 
-      // Salva o ID e entra na Home
       const user = response.data;
       localStorage.setItem('@dailydiet:userid', user.id);
       navigate('/home');
@@ -99,35 +106,40 @@ export function SignIn() {
 
   return (
     <Container>
-      <Card>
-        <Logo>
-          <ForkKnife size={40} />
-          Daily Diet
-        </Logo>
+      {/* 3. Envolvemos o Card no Content */}
+      <Content>
+        <Card>
+          <Logo>
+            <ForkKnife size={40} />
+            Daily Diet
+          </Logo>
 
-        {isRegistering && (
+          {isRegistering && (
+            <Input 
+              placeholder="Seu nome" 
+              value={name} 
+              onChange={e => setName(e.target.value)} 
+            />
+          )}
+          
           <Input 
-            placeholder="Seu nome" 
-            value={name} 
-            onChange={e => setName(e.target.value)} 
+            placeholder="Seu e-mail" 
+            type="email"
+            value={email} 
+            onChange={e => setEmail(e.target.value)} 
           />
-        )}
-        
-        <Input 
-          placeholder="Seu e-mail" 
-          type="email"
-          value={email} 
-          onChange={e => setEmail(e.target.value)} 
-        />
 
-        <Button onClick={handleAuth}>
-          {isRegistering ? 'Cadastrar' : 'Entrar'}
-        </Button>
-        
-        <Button variant="secondary" onClick={() => setIsRegistering(!isRegistering)}>
-          {isRegistering ? 'Já tenho conta' : 'Criar conta'}
-        </Button>
-      </Card>
+          <Button onClick={handleAuth}>
+            {isRegistering ? 'Cadastrar' : 'Entrar'}
+          </Button>
+          
+          <Button variant="secondary" onClick={() => setIsRegistering(!isRegistering)}>
+            {isRegistering ? 'Já tenho conta' : 'Criar conta'}
+          </Button>
+        </Card>
+      </Content>
+      
+      <Footer />
     </Container>
   );
 }

@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import api from '../../services/api';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'phosphor-react';
+import { Footer } from '../../components/Footer';
 
 const Container = styled.div`
   background: ${({ theme }) => theme.COLORS.GREEN_LIGHT};
@@ -91,6 +92,7 @@ export function Metrics() {
           </Card>
         </div>
       </Content>
+      <Footer />
     </Container>
   );
 }

@@ -1,8 +1,8 @@
 # Daily Diet - Projeto Fullstack
 
-> **Disciplina:** Programação para WEB II  
-> **Instituição:** Unitins - Universidade Estadual do Tocantins  
-> **Atividade:** Avaliativa A2 - Projeto Fullstack
+> **Disciplina:** Programação para WEB II <br> 
+> **Instituição:** Unitins - Universidade Estadual do Tocantins <br> 
+> **Atividade:** Avaliativa A2 - Projeto Fullstack <br>
 > **Aluno:** Riê Veloso de Brito
 
 Projeto desenvolvido com o objetivo de criar uma aplicação completa (Fullstack) para controle de dieta diária. A aplicação permite que usuários criem contas, registrem suas refeições, classifiquem a dieta e acompanhem métricas de progresso em tempo real.

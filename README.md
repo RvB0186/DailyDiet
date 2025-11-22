@@ -3,6 +3,7 @@
 > **Disciplina:** Programação para WEB II  
 > **Instituição:** Unitins - Universidade Estadual do Tocantins  
 > **Atividade:** Avaliativa A2 - Projeto Fullstack
+> **Aluno:** Riê Veloso de Brito
 
 Projeto desenvolvido com o objetivo de criar uma aplicação completa (Fullstack) para controle de dieta diária. A aplicação permite que usuários criem contas, registrem suas refeições, classifiquem a dieta e acompanhem métricas de progresso em tempo real.
 
@@ -75,6 +76,7 @@ DAILYDIET/
     └── package.json
 
     📦 Como Rodar o Projeto
+
 Para executar a aplicação completa, é necessário rodar o backend e o frontend simultaneamente em terminais separados.
 
 Pré-requisitos
@@ -86,19 +88,15 @@ Passo 1: Iniciar a API (Backend)
 Abra um terminal na pasta raiz do projeto.
 
 Acesse a pasta do backend:
-
 Bash
-
 cd backend
+
 Instale as dependências:
-
 Bash
-
 npm install
+
 Inicie o servidor:
-
 Bash
-
 npm run dev
 # ou
 node src/server.js
@@ -108,20 +106,17 @@ Passo 2: Iniciar a Interface (Frontend)
 Abra um novo terminal.
 
 Acesse a pasta do frontend:
-
 Bash
-
 cd frontend
+
 Instale as dependências:
-
 Bash
-
 npm install
-Inicie o projeto React:
 
+nicie o projeto React:
 Bash
-
 npm run dev
+
 Acesse o link exibido no terminal (geralmente http://localhost:5173).
 
 📝 Observações Importantes

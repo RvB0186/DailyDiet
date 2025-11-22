@@ -5,8 +5,10 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'phosphor-react';
 
 const Container = styled.div`
-  background: ${({ theme }) => theme.COLORS.GREEN_LIGHT}; /* Condicional na pratica */
+  background: ${({ theme }) => theme.COLORS.GREEN_LIGHT};
   min-height: 100vh;
+  display: flex;       /* Garante que os filhos se comportem bem */
+  flex-direction: column;
 `;
 
 const Header = styled.header`
@@ -19,12 +21,17 @@ const Header = styled.header`
 
 const Content = styled.div`
   background: white;
-  border-radius: 20px 20px 0 0;
+  border-radius: 20px 20px 20px 20px;
   padding: 2rem;
-  height: 100%;
+  flex: 0; 
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  
+  /* Centralização Horizontal */
+  max-width: 700px;
+  width: 100%;
+  margin: 0 auto; 
 `;
 
 const Card = styled.div`

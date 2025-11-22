@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import api from '../../services/api';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Plus, ChartBar } from 'phosphor-react';
 
 const Container = styled.div`
@@ -16,7 +16,15 @@ const Header = styled.header`
   align-items: center;
   margin-bottom: 2rem;
   
-  img { width: 80px; } /* Logo fictícia */
+  div {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  h2 { font-size: 1.5rem; color: ${({ theme }) => theme.COLORS.GRAY_700}; }
+  span { color: ${({ theme }) => theme.COLORS.GRAY_600}; font-size: 1rem; }
+  
+  img { width: 50px; height: 50px; border-radius: 50%; border: 2px solid ${({ theme }) => theme.COLORS.GRAY_700}; }
 `;
 
 const Button = styled.button`
@@ -48,6 +56,7 @@ const PercentCard = styled(Link)`
   span { color: ${({ theme }) => theme.COLORS.GRAY_600}; font-size: 14px; }
 `;
 
+// O MealCard agora é clicável, então adicionamos cursor pointer
 const MealCard = styled.div`
   padding: 16px;
   border: 1px solid ${({ theme }) => theme.COLORS.GRAY_300};
@@ -56,6 +65,10 @@ const MealCard = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover { background: ${({ theme }) => theme.COLORS.GRAY_300}; }
   
   strong { flex: 1; color: ${({ theme }) => theme.COLORS.GRAY_700}; }
   
@@ -70,15 +83,20 @@ const MealCard = styled.div`
 export function Home() {
   const [meals, setMeals] = useState([]);
   const [metrics, setMetrics] = useState({});
+  const [user, setUser] = useState({ name: 'Carregando...' }); // Estado para o usuário
+  const navigate = useNavigate();
 
   async function loadData() {
     try {
-      const [mealsRes, metricsRes] = await Promise.all([
+      // Agora buscamos também o /me
+      const [mealsRes, metricsRes, userRes] = await Promise.all([
         api.get('/meals'),
-        api.get('/metrics')
+        api.get('/metrics'),
+        api.get('/me')
       ]);
       setMeals(mealsRes.data);
       setMetrics(metricsRes.data);
+      setUser(userRes.data);
     } catch (error) {
       console.error("Erro ao carregar dados", error);
     }
@@ -93,8 +111,11 @@ export function Home() {
   return (
     <Container>
       <Header>
-        <h2>Daily Diet</h2>
-        <img src="https://github.com/rocketseat.png" style={{borderRadius: '50%'}} alt="Profile"/>
+        <div>
+           <span>Olá,</span>
+           <h2>{user.name}</h2>
+        </div>
+        <img src="https://github.com/rocketseat.png" alt="Profile"/>
       </Header>
 
       <PercentCard to="/metrics">
@@ -111,7 +132,12 @@ export function Home() {
       </Link>
 
       {meals.map(meal => (
-        <MealCard key={meal.id} isOnDiet={meal.isOnDiet}>
+        // Ao clicar no card, vai para a página de detalhes
+        <MealCard 
+          key={meal.id} 
+          isOnDiet={meal.isOnDiet}
+          onClick={() => navigate(`/meal/${meal.id}`)}
+        >
           <span>{new Date(meal.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
           <div style={{height: 20, width: 1, background: '#ddd'}}></div>
           <strong>{meal.name}</strong>

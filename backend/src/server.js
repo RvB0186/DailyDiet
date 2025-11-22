@@ -27,6 +27,10 @@ function checkUserExists(req, res, next) {
 // --- ROTAS ---
 
 // 1. Criar Usuário
+app.get('/me', checkUserExists, (req, res) => {
+  return res.json(req.user);
+});
+
 app.post('/users', (req, res) => {
   const { name, email } = req.body;
   // Cria um ID único para o usuário
